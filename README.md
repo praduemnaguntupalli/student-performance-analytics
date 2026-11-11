@@ -1,16 +1,16 @@
-### Student Performance Analytics & Prediction System
+# Student Performance Analytics & Prediction System
 
-1. Project Overview
+## Project Overview
 
-## Generating Statistics and Visualisations
+  Generating Statistics and Visualisations
 
 The Student Performance Analytics & Prediction System is a Python-based application designed to analyze student academic grade. It imports current batch student data from CSV files, performs data cleaning and statistical analysis, and generates visualizations to identify academic performance trends.
 
-## Prediction Component
+Prediction Component
 
 The system also includes a prediction component that uses previous batch academic results to estimate grades for students in the current batch.
 
-2. Features
+## Features
 
 - Import student academic records from CSV files.
 - Clean and preprocess datasets.
@@ -20,7 +20,7 @@ The system also includes a prediction component that uses previous batch academi
 - Predict student grades using previous batch data.
 - Generate reports based on the analysis.
 
-3. Technologies Used
+## Technologies Used
 
 - Programming: Python, OOP
 - Shell scripting: Bash
@@ -28,7 +28,7 @@ The system also includes a prediction component that uses previous batch academi
 - Data visualization: Matplotlib
 - Version control: Git, GitHub
 
-4. Topics Covered
+## Topics Covered
    
 - Python Programming
 - Python Libraries and Data Processing
@@ -39,9 +39,7 @@ The system also includes a prediction component that uses previous batch academi
 - Git and GitHub
 - LaTeX / Beamer for documentation and presentation
 
-5. Installation
-
-## Prerequisites
+## Installation
 
 - Python
 - Git
@@ -49,14 +47,22 @@ The system also includes a prediction component that uses previous batch academi
 - Pandas
 - Numpy
 - Latex
+  
+## Prerequisites
 
--------------TO BE DONE --------------------
+- Python programming
+- Understanding of CSV files and tabular data
+- Basic statistics (mean, median, standard deviation)
+- Understanding of data visualization
+- Git and GitHub 
+- Bash scripting
+- Unix commands
 
-6. Compilation and Execution
+## Compilation and Execution
 
 ---------TO BE DONE ------------------
 
-7. Usage Instructions
+## Usage Instructions
 
 1. Prepare the historical batch CSV file containing student marks and actual grades.
 2. Prepare the current batch CSV file containing available student academic information.
@@ -67,7 +73,7 @@ The system also includes a prediction component that uses previous batch academi
 7. Execute the prediction component to estimate grades for current batch students.
 8. View the generated analysis and predicted results.
 
-8. Dataset Format
+## Dataset Format
 
 The input CSV files contains the following fields:
 - Student name
@@ -80,14 +86,14 @@ The input CSV files contains the following fields:
 
 The previous batch dataset contains actual grades which is used for the prediction component. The current batch dataset contains the available academic information used to estimate grades.
 
-9. Project Structure
+## Project Structure
 
 -----TO BE  DONE----------------------
 
-10. Team Members
+## Team Members
 
-- varun kumar reddy - cs25bt018
-- praduemna - cs25bt015
-- jagannadha gupta - cs25bt034
-- benarjee - cs25bt053
-- venkat - cs25bt032
+- Varun Kumar Reddy - CS25bt018
+- Praduemna - CS25bt015
+- Jagannadha gupta - CS25bt034
+- Benarjee - CS25bt053
+- Venkat - CS25bt032
