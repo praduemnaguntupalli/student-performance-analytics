@@ -1,275 +1,453 @@
+
 from pathlib import Path
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
 
-class StudentVisualizer:
+# --------------------------------------------------
+# 1. READ THE DATASETS
+# --------------------------------------------------
 
-    def __init__(self, csv_filename="cleaned_current.csv"):
+folder = Path(__file__).resolve().parent
 
-        # Search the script folder and any subfolders for the CSV file
-        base_dir = Path(__file__).resolve().parent
-        matches = list(base_dir.rglob(csv_filename))
+current = pd.read_csv(folder / "cleaned_current.csv")
+previous = pd.read_csv(folder / "cleaned_previous.csv")
 
-        if not matches:
-            available_csvs = [
-                str(p.relative_to(base_dir)) for p in base_dir.rglob("*.csv")
-            ]
-            raise FileNotFoundError(
-                f"Could not find '{csv_filename}' inside '{base_dir}'.\n"
-                f"CSV files found in project: {available_csvs}"
-            )
+# Standardise column names
+current.columns = current.columns.str.strip().str.lower().str.replace(" ", "_")
+previous.columns = previous.columns.str.strip().str.lower().str.replace(" ", "_")
 
-        # Read cleaned current batch
-        self.data = pd.read_csv(matches[0])
+subjects = ["calculus", "dsa", "digital_systems"]
 
-        # Standardise column names
-        self.data.columns = (
-            self.data.columns
-            .str.strip()
-            .str.lower()
-            .str.replace(" ", "_", regex=False)
-        )
+subject_names = {
+    "calculus": "Calculus",
+    "dsa": "DSA",
+    "digital_systems": "Digital Systems"
+}
 
-        # Subject names and display labels
-        self.subjects = [
-            "calculus",
-            "dsa",
-            "digital_systems"
-        ]
-        self.subject_labels = [
-            "Calculus",
-            "DSA",
-            "Digital Systems"
-        ]
+colours = {
+    "calculus": "blue",
+    "dsa": "red",
+    "digital_systems": "green"
+}
 
-        # Calculate weighted marks
-        self.calculate_all_marks()
+grades = ["AA", "AB", "BB", "BC", "CC", "DX", "FR"]
 
-    # --------------------------------
-    # Find a column using its name
-    # --------------------------------
 
-    def get_column(self, subject, assessment):
+# --------------------------------------------------
+# 2. CALCULATE WEIGHTED AVERAGE
+# --------------------------------------------------
 
-        possible_names = [
-            subject + "_" + assessment,
-            subject + "_" + assessment + "_(20)",
-            subject + "_" + assessment + "_(10)",
-            subject + "_" + assessment + "_(50)",
-            subject + "_" + assessment + "_(100)"
-        ]
+def calculate_marks(data, subject):
 
-        for name in possible_names:
-            if name in self.data.columns:
-                return name
+    assignments = pd.to_numeric(
+        data[subject + "_assignments_(20)"], errors="coerce"
+    )
 
-        raise ValueError(
-            "Column not found: " + subject + "_" + assessment
-            + "\nAvailable columns:\n"
-            + str(self.data.columns.tolist())
-        )
+    quiz1 = pd.to_numeric(
+        data[subject + "_quiz_1_(10)"], errors="coerce"
+    )
 
-    # --------------------------------
-    # Calculate weighted marks
-    # --------------------------------
+    quiz2 = pd.to_numeric(
+        data[subject + "_quiz_2_(10)"], errors="coerce"
+    )
 
-    def calculate_marks(self, subject):
+    midsem = pd.to_numeric(
+        data[subject + "_midsem_(50)"], errors="coerce"
+    )
 
-        assignment = self.get_column(subject, "assignments")
-        quiz1 = self.get_column(subject, "quiz_1")
-        quiz2 = self.get_column(subject, "quiz_2")
-        midsem = self.get_column(subject, "midsem")
-        endsem = self.get_column(subject, "endsem")
+    endsem = pd.to_numeric(
+        data[subject + "_endsem_(100)"], errors="coerce"
+    )
 
-        marks = self.data[
-            [assignment, quiz1, quiz2, midsem, endsem]
-        ].apply(pd.to_numeric, errors="coerce")
+    # Weighted marks out of 100
+    total = (
+        (assignments / 20) * 10
+        + (quiz1 / 10) * 10
+        + (quiz2 / 10) * 10
+        + (midsem / 50) * 30
+        + (endsem / 100) * 40
+    )
 
-        total = (
-            marks.iloc[:, 0] / 20 * 10
-            + marks.iloc[:, 1] / 10 * 10
-            + marks.iloc[:, 2] / 10 * 10
-            + marks.iloc[:, 3] / 50 * 30
-            + marks.iloc[:, 4] / 100 * 40
-        )
+    # If any assessment is missing, keep the total missing
+    return total.where(
+        assignments.notna()
+        & quiz1.notna()
+        & quiz2.notna()
+        & midsem.notna()
+        & endsem.notna()
+    )
 
-        total[marks.isna().any(axis=1)] = np.nan
 
-        return total
+# Calculate marks for all three subjects
+for subject in subjects:
 
-    # --------------------------------
-    # Calculate marks for all subjects
-    # --------------------------------
+    current[subject + "_average"] = calculate_marks(current, subject)
 
-    def calculate_all_marks(self):
+    previous[subject + "_average"] = calculate_marks(previous, subject)
 
-        for subject in self.subjects:
-            self.data[subject + "_average"] = self.calculate_marks(subject)
 
-    # --------------------------------
-    # Graph 1: Subject average comparison
-    # --------------------------------
+# --------------------------------------------------
+# 3. FIND GRADES
+# --------------------------------------------------
 
-    def subject_average_graph(self):
+def get_grades(data, subject):
 
-        averages = [
-            self.data[subject + "_average"].mean()
-            for subject in self.subjects
-        ]
+    grade_column = subject + "_grade"
 
-        plt.figure(figsize=(12, 6))
+    if grade_column in data.columns:
 
-        bars = plt.bar(self.subject_labels, averages)
-        plt.bar_label(bars, fmt="%.2f", padding=3)
+        result = data[grade_column].astype(str).str.strip().str.upper()
 
-        plt.title("Average Weighted Marks Comparison")
-        plt.xlabel("Subjects")
-        plt.ylabel("Average Marks out of 100")
+    else:
 
-        plt.ylim(0, 100)
-        plt.tight_layout()
-        plt.show()
+        marks = data[subject + "_average"]
 
-    # --------------------------------
-    # Graph 2: Attendance vs marks
-    # --------------------------------
+        result = pd.cut(
+            marks,
+            bins=[-np.inf, 43.5, 49.5, 57.5, 65.5, 74.5, 84.5, np.inf],
+            labels=["FR", "DX", "CC", "BC", "BB", "AB", "AA"]
+        ).astype("object")
 
-    def attendance_graph(self):
+    # Attendance below 75% is assigned DX
+    attendance_column = subject + "_attendance_(%)"
 
-        attendance_columns = [
-            col for col in self.data.columns
-            if "attendance" in col
-        ]
-
-        if not attendance_columns:
-            print("Attendance column not found!")
-            return
+    if attendance_column in data.columns:
 
         attendance = pd.to_numeric(
-            self.data[attendance_columns[0]],
-            errors="coerce"
+            data[attendance_column], errors="coerce"
         )
 
-        plt.figure(figsize=(12, 6))
+        result.loc[attendance < 75] = "DX"
 
-        for subject in self.subjects:
-            label = subject.replace("_", " ").title()
-            plt.scatter(
-                attendance,
-                self.data[subject + "_average"],
-                label=label,
-                alpha=0.75
-            )
+    return result
 
-        plt.title("Attendance vs Student Performance")
-        plt.xlabel("Attendance (%)")
-        plt.ylabel("Weighted Marks out of 100")
 
-        plt.legend(loc="upper left")
-        plt.grid(True, alpha=0.6)
-        plt.tight_layout()
-        plt.show()
+# --------------------------------------------------
+# GRAPH 1: SUBJECT AVERAGE MARKS
+# --------------------------------------------------
 
-    # --------------------------------
-    # Graph 3: Assessment Performance Comparison
-    # --------------------------------
+def subject_average_graph():
 
-    def assessment_graph(self):
+    averages = []
 
-        assessments = [
-            ("assignments", 20, 10, "Assignment"),
-            ("quiz_1", 10, 10, "Quiz 1"),
-            ("quiz_2", 10, 10, "Quiz 2"),
-            ("midsem", 50, 30, "Midsem"),
-            ("endsem", 100, 40, "Endsem")
+    for subject in subjects:
+        averages.append(current[subject + "_average"].mean())
+
+    plt.figure(figsize=(8, 5))
+
+    plt.bar(
+        ["Calculus", "DSA", "Digital Systems"],
+        averages,
+        color=["blue", "red", "green"]
+    )
+
+    plt.title("Average Marks of Three Subjects")
+    plt.xlabel("Subjects")
+    plt.ylabel("Average Marks")
+    plt.ylim(0, 100)
+    plt.grid(axis="y", alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
+
+# --------------------------------------------------
+# GRAPH 2: ATTENDANCE VS AVERAGE MARKS
+# --------------------------------------------------
+
+def attendance_graph():
+
+    plt.figure(figsize=(8, 5))
+
+    for subject in subjects:
+
+        attendance_column = subject + "_attendance_(%)"
+
+        if attendance_column not in current.columns:
+            continue
+
+        attendance = pd.to_numeric(
+            current[attendance_column], errors="coerce"
+        )
+
+        marks = current[subject + "_average"]
+
+        plt.scatter(
+            attendance,
+            marks,
+            color=colours[subject],
+            label=subject_names[subject],
+            alpha=0.6
+        )
+
+    plt.axvline(75, color="black", linestyle="--", label="75% Attendance")
+
+    plt.title("Attendance vs Average Marks")
+    plt.xlabel("Attendance (%)")
+    plt.ylabel("Average Marks")
+    plt.legend()
+    plt.grid(alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
+
+# --------------------------------------------------
+# GRAPH 3: ASSESSMENT-WISE COMPARISON
+# --------------------------------------------------
+
+def assessment_graph():
+
+    assessments = [
+        "assignments_(20)",
+        "quiz_1_(10)",
+        "quiz_2_(10)",
+        "midsem_(50)",
+        "endsem_(100)"
+    ]
+
+    weights = [10, 10, 10, 30, 40]
+
+    values = []
+
+    for subject in subjects:
+
+        subject_values = []
+
+        for assessment, weight in zip(assessments, weights):
+
+            column = subject + "_" + assessment
+
+            marks = pd.to_numeric(current[column], errors="coerce")
+
+            maximum = int(assessment.split("(")[1].replace(")", ""))
+
+            contribution = (marks / maximum) * weight
+
+            subject_values.append(contribution.mean())
+
+        values.append(subject_values)
+
+    x = np.arange(len(assessments))
+    width = 0.25
+
+    plt.figure(figsize=(10, 5))
+
+    for i, subject in enumerate(subjects):
+
+        plt.bar(
+            x + i * width,
+            values[i],
+            width,
+            label=subject_names[subject],
+            color=colours[subject]
+        )
+
+    plt.xticks(
+        x + width,
+        ["Assignments", "Quiz 1", "Quiz 2", "Midsem", "Endsem"]
+    )
+
+    plt.title("Assessment-wise Subject Comparison")
+    plt.xlabel("Assessments")
+    plt.ylabel("Average Weighted Contribution")
+    plt.legend()
+    plt.grid(axis="y", alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
+
+# --------------------------------------------------
+# GRAPH 4: GRADE DISTRIBUTION
+# --------------------------------------------------
+
+def grade_distribution():
+
+    grade_counts = {}
+
+    for subject in subjects:
+
+        student_grades = get_grades(current, subject)
+
+        grade_counts[subject_names[subject]] = [
+            (student_grades == grade).sum()
+            for grade in grades
         ]
 
-        x = np.arange(len(assessments))
-        width = 0.25
+    x = np.arange(len(grades))
+    width = 0.25
 
-        plt.figure(figsize=(12, 6))
+    plt.figure(figsize=(9, 5))
 
-        for i, (subject, label) in enumerate(zip(self.subjects, self.subject_labels)):
-            weighted_avgs = []
+    for i, subject in enumerate(subjects):
 
-            for col_key, max_marks, weight, _ in assessments:
-                column = self.get_column(subject, col_key)
-                marks = pd.to_numeric(self.data[column], errors="coerce")
-                weighted_avgs.append((marks / max_marks * weight).mean())
+        plt.bar(
+            x + i * width,
+            grade_counts[subject_names[subject]],
+            width,
+            label=subject_names[subject],
+            color=colours[subject]
+        )
 
-            plt.bar(x + (i - 1) * width, weighted_avgs, width, label=label)
+    plt.xticks(x + width, grades)
 
-        plt.title("Assessment Performance Comparison")
-        plt.xlabel("Assessment Components")
-        plt.ylabel("Average Weighted Contribution")
-        plt.xticks(x, [item[3] for item in assessments])
-
-        plt.legend(loc="upper left")
-        plt.grid(axis="y", alpha=0.6)
-        plt.tight_layout()
-        plt.show()
-
-    # --------------------------------
-    # Graph 4: Grade Distribution Across Subjects
-    # --------------------------------
-
-    def grade_distribution(self):
-
-        grade_order = ["AA", "AB", "BB", "BC", "CC", "DX", "FR"]
-        x = np.arange(len(grade_order))
-        width = 0.25
-
-        plt.figure(figsize=(12, 6))
-
-        for i, (subject, label) in enumerate(zip(self.subjects, self.subject_labels)):
-            grade_col = subject + "_grade"
-
-            if grade_col in self.data.columns:
-                grades = self.data[grade_col].astype(str).str.strip().str.upper()
-            else:
-                marks = self.data[subject + "_average"]
-                grades = pd.cut(
-                    marks,
-                    bins=[-np.inf, 43.5, 49.5, 57.5, 65.5, 74.5, 84.5, np.inf],
-                    labels=["FR", "DX", "CC", "BC", "BB", "AB", "AA"]
-                )
-
-            counts = grades.value_counts().reindex(grade_order, fill_value=0)
-            plt.bar(x + (i - 1) * width, counts.values, width, label=label)
-
-        plt.title("Grade Distribution Across Subjects")
-        plt.xlabel("Grades")
-        plt.ylabel("Number of Students")
-        plt.xticks(x, grade_order)
-
-        plt.legend(loc="upper right")
-        plt.grid(axis="y", alpha=0.6)
-        plt.tight_layout()
-        plt.show()
-
-    # --------------------------------
-    # Run all graphs
-    # --------------------------------
-
-    def run(self):
-
-        print("\nGenerating visualizations...")
-
-        self.subject_average_graph()
-        self.attendance_graph()
-        self.assessment_graph()
-        self.grade_distribution()
-
-        print("\nAll graphs generated successfully!")
+    plt.title("Grade Distribution of Three Subjects")
+    plt.xlabel("Grades")
+    plt.ylabel("Number of Students")
+    plt.legend()
+    plt.grid(axis="y", alpha=0.3)
+    plt.tight_layout()
+    plt.show()
 
 
-# --------------------------------
-# Main program
-# --------------------------------
+# --------------------------------------------------
+# GRAPH 5: MARKS HISTOGRAM COMPARISON
+# --------------------------------------------------
+
+def marks_histogram():
+
+    bins = [0, 20, 40, 60, 80, 100]
+
+    counts = []
+
+    for subject in subjects:
+
+        marks = current[subject + "_average"].dropna()
+
+        histogram, _ = np.histogram(marks, bins=bins)
+
+        counts.append(histogram)
+
+    x = np.arange(len(bins) - 1)
+    width = 0.25
+
+    plt.figure(figsize=(9, 5))
+
+    for i, subject in enumerate(subjects):
+
+        plt.bar(
+            x + i * width,
+            counts[i],
+            width,
+            label=subject_names[subject],
+            color=colours[subject]
+        )
+
+    plt.xticks(
+        x + width,
+        ["0-20", "20-40", "40-60", "60-80", "80-100"]
+    )
+
+    plt.title("Marks Distribution of Three Subjects")
+    plt.xlabel("Marks Range")
+    plt.ylabel("Number of Students")
+    plt.legend()
+    plt.grid(axis="y", alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
+
+# --------------------------------------------------
+# GRAPH 6: Z-SCORE VS GRADE SCATTER PLOT
+# --------------------------------------------------
+
+def z_average_vs_grade():
+
+    plt.figure(figsize=(11, 6))
+
+    grade_positions = {
+        grade: i for i, grade in enumerate(grades)
+    }
+
+    # Use a fixed random generator for consistent jitter
+    random_generator = np.random.default_rng(42)
+
+    for subject in subjects:
+
+        marks = previous[subject + "_average"]
+
+        # Calculate mean and standard deviation from previous batch
+        mean = marks.mean()
+        std = marks.std()
+
+        if pd.isna(std) or std == 0:
+            continue
+
+        # Calculate individual student Z-scores
+        z_scores = (marks - mean) / std
+
+        # Get the grade of each previous-batch student
+        student_grades = get_grades(previous, subject)
+
+        x_values = []
+        y_values = []
+
+        for grade in grades:
+
+            # Select students belonging to this grade
+            selected = student_grades == grade
+
+            selected_z = z_scores[selected].dropna()
+
+            for z in selected_z:
+
+                # Small horizontal shift to avoid overlapping circles
+                jitter = random_generator.uniform(-0.12, 0.12)
+
+                x_values.append(grade_positions[grade] + jitter)
+                y_values.append(z)
+
+        # Plot individual students using circles
+        plt.scatter(
+            x_values,
+            y_values,
+            color=colours[subject],
+            label=subject_names[subject],
+            marker="o",
+            s=45,
+            alpha=0.65
+        )
+
+    plt.axhline(
+        0,
+        color="black",
+        linestyle="--",
+        label="Z-score = 0"
+    )
+
+    plt.xticks(
+        range(len(grades)),
+        grades
+    )
+
+    plt.title("Individual Student Z-score vs Grade")
+    plt.xlabel("Grades")
+    plt.ylabel("Individual Student Z-score")
+    plt.legend()
+    plt.grid(alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
+
+# --------------------------------------------------
+# 7. DISPLAY ALL GRAPHS
+# --------------------------------------------------
+
+def main():
+
+    subject_average_graph()
+
+    attendance_graph()
+
+    assessment_graph()
+
+    grade_distribution()
+
+    marks_histogram()
+
+    z_average_vs_grade()
+
 
 if __name__ == "__main__":
 
-    visualizer = StudentVisualizer()
-    visualizer.run()
+    main()
