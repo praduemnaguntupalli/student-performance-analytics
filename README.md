@@ -88,7 +88,15 @@ The previous batch dataset contains actual grades which is used for the predicti
 
 ## Project Structure
 
------TO BE  DONE----------------------
+- beamer.pdf
+- clean_data.py
+- latex report.pdf
+- predict_grades.py
+- README.md
+- run_pipeline.sh
+- student_dataset_current_batch.csv
+- student_dataset_previous_batch.csv
+- visualize_data.py
 
 ## Team Members
 
