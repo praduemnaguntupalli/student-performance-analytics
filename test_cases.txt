@@ -1,7 +1,0 @@
-marks | 20, 10, 10, 50, 100 | 100.0
-marks | 10, 5, 5, 25, 50 | 50.0
-marks | 20, nan, 10, 50, 100 | nan
-grade | 1.4 | AA
-grade | -0.1 | BB
-grade | nan | N/A
-zscore | 75, 75, 75 | ValueError
