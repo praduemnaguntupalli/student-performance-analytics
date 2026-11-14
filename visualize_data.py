@@ -5,16 +5,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-# --------------------------------------------------
-# 1. READ THE DATASETS
-# --------------------------------------------------
-
 folder = Path(__file__).resolve().parent
 
 current = pd.read_csv(folder / "cleaned_current.csv")
 previous = pd.read_csv(folder / "cleaned_previous.csv")
 
-# Standardise column names
 current.columns = current.columns.str.strip().str.lower().str.replace(" ", "_")
 previous.columns = previous.columns.str.strip().str.lower().str.replace(" ", "_")
 
@@ -34,10 +29,6 @@ colours = {
 
 grades = ["AA", "AB", "BB", "BC", "CC", "DX", "FR"]
 
-
-# --------------------------------------------------
-# 2. CALCULATE WEIGHTED AVERAGE
-# --------------------------------------------------
 
 def calculate_marks(data, subject):
 
@@ -61,7 +52,6 @@ def calculate_marks(data, subject):
         data[subject + "_endsem_(100)"], errors="coerce"
     )
 
-    # Weighted marks out of 100
     total = (
         (assignments / 20) * 10
         + (quiz1 / 10) * 10
@@ -70,7 +60,6 @@ def calculate_marks(data, subject):
         + (endsem / 100) * 40
     )
 
-    # If any assessment is missing, keep the total missing
     return total.where(
         assignments.notna()
         & quiz1.notna()
@@ -80,17 +69,12 @@ def calculate_marks(data, subject):
     )
 
 
-# Calculate marks for all three subjects
 for subject in subjects:
 
     current[subject + "_average"] = calculate_marks(current, subject)
 
     previous[subject + "_average"] = calculate_marks(previous, subject)
 
-
-# --------------------------------------------------
-# 3. FIND GRADES
-# --------------------------------------------------
 
 def get_grades(data, subject):
 
@@ -110,7 +94,6 @@ def get_grades(data, subject):
             labels=["FR", "DX", "CC", "BC", "BB", "AB", "AA"]
         ).astype("object")
 
-    # Attendance below 75% is assigned DX
     attendance_column = subject + "_attendance_(%)"
 
     if attendance_column in data.columns:
@@ -123,10 +106,6 @@ def get_grades(data, subject):
 
     return result
 
-
-# --------------------------------------------------
-# GRAPH 1: SUBJECT AVERAGE MARKS
-# --------------------------------------------------
 
 def subject_average_graph():
 
@@ -151,10 +130,6 @@ def subject_average_graph():
     plt.tight_layout()
     plt.show()
 
-
-# --------------------------------------------------
-# GRAPH 2: ATTENDANCE VS AVERAGE MARKS
-# --------------------------------------------------
 
 def attendance_graph():
 
@@ -181,7 +156,12 @@ def attendance_graph():
             alpha=0.6
         )
 
-    plt.axvline(75, color="black", linestyle="--", label="75% Attendance")
+    plt.axvline(
+        75,
+        color="black",
+        linestyle="--",
+        label="75% Attendance"
+    )
 
     plt.title("Attendance vs Average Marks")
     plt.xlabel("Attendance (%)")
@@ -191,10 +171,6 @@ def attendance_graph():
     plt.tight_layout()
     plt.show()
 
-
-# --------------------------------------------------
-# GRAPH 3: ASSESSMENT-WISE COMPARISON
-# --------------------------------------------------
 
 def assessment_graph():
 
@@ -257,10 +233,6 @@ def assessment_graph():
     plt.show()
 
 
-# --------------------------------------------------
-# GRAPH 4: GRADE DISTRIBUTION
-# --------------------------------------------------
-
 def grade_distribution():
 
     grade_counts = {}
@@ -299,10 +271,6 @@ def grade_distribution():
     plt.tight_layout()
     plt.show()
 
-
-# --------------------------------------------------
-# GRAPH 5: MARKS HISTOGRAM COMPARISON
-# --------------------------------------------------
 
 def marks_histogram():
 
@@ -347,10 +315,6 @@ def marks_histogram():
     plt.show()
 
 
-# --------------------------------------------------
-# GRAPH 6: Z-SCORE VS GRADE SCATTER PLOT
-# --------------------------------------------------
-
 def z_average_vs_grade():
 
     plt.figure(figsize=(11, 6))
@@ -359,24 +323,20 @@ def z_average_vs_grade():
         grade: i for i, grade in enumerate(grades)
     }
 
-    # Use a fixed random generator for consistent jitter
     random_generator = np.random.default_rng(42)
 
     for subject in subjects:
 
         marks = previous[subject + "_average"]
 
-        # Calculate mean and standard deviation from previous batch
         mean = marks.mean()
         std = marks.std()
 
         if pd.isna(std) or std == 0:
             continue
 
-        # Calculate individual student Z-scores
         z_scores = (marks - mean) / std
 
-        # Get the grade of each previous-batch student
         student_grades = get_grades(previous, subject)
 
         x_values = []
@@ -384,20 +344,17 @@ def z_average_vs_grade():
 
         for grade in grades:
 
-            # Select students belonging to this grade
             selected = student_grades == grade
 
             selected_z = z_scores[selected].dropna()
 
             for z in selected_z:
 
-                # Small horizontal shift to avoid overlapping circles
                 jitter = random_generator.uniform(-0.12, 0.12)
 
                 x_values.append(grade_positions[grade] + jitter)
                 y_values.append(z)
 
-        # Plot individual students using circles
         plt.scatter(
             x_values,
             y_values,
@@ -428,10 +385,6 @@ def z_average_vs_grade():
     plt.tight_layout()
     plt.show()
 
-
-# --------------------------------------------------
-# 7. DISPLAY ALL GRAPHS
-# --------------------------------------------------
 
 def main():
 

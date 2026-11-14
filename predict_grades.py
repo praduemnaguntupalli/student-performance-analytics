@@ -17,7 +17,6 @@ class GradePredictor:
             header=None
         )
 
-        # Original column positions
         self.subjects = {
 
             "Calculus": {
@@ -45,10 +44,6 @@ class GradePredictor:
             }
         }
 
-    # --------------------------------
-    # Calculate weighted marks
-    # --------------------------------
-
     def calculate_marks(self, data, columns):
 
         marks = data.iloc[:, columns].apply(
@@ -64,14 +59,9 @@ class GradePredictor:
             + marks.iloc[:, 4] / 100 * 40
         )
 
-        # Missing marks should not be treated as zero
         score[marks.isna().any(axis=1)] = np.nan
 
         return score
-
-    # --------------------------------
-    # Calculate Z-score
-    # --------------------------------
 
     def calculate_z(self, scores):
 
@@ -86,11 +76,6 @@ class GradePredictor:
         z = (scores - mean) / sd
 
         return z, mean, sd
-
-    # --------------------------------
-    # Find average Z-score for grades
-    # in previous batch
-    # --------------------------------
 
     def find_grade_averages(self, subject, details):
 
@@ -136,10 +121,6 @@ class GradePredictor:
 
         return grade_average
 
-    # --------------------------------
-    # Predict grade using closest Zavg
-    # --------------------------------
-
     def predict(self, z, grade_average):
 
         if pd.isna(z):
@@ -151,10 +132,6 @@ class GradePredictor:
 
         return closest_grade
 
-    # --------------------------------
-    # Main prediction
-    # --------------------------------
-
     def run(self):
 
         predictions = {}
@@ -165,30 +142,25 @@ class GradePredictor:
             print("PROCESSING:", subject)
             print("================================")
 
-            # Previous batch grade-wise Z averages
             grade_average = self.find_grade_averages(
                 subject,
                 details
             )
 
-            # Current batch attendance
             attendance = pd.to_numeric(
                 self.current.iloc[2:, details["attendance"]],
                 errors="coerce"
             ).reset_index(drop=True)
 
-            # Current batch weighted marks
             current_scores = self.calculate_marks(
                 self.current.iloc[2:],
                 details["current_marks"]
             ).reset_index(drop=True)
 
-            # Current batch Z-scores
             current_z, current_mean, current_sd = (
                 self.calculate_z(current_scores)
             )
 
-            # Predict grades
             predicted_grades = []
 
             for i in range(len(current_scores)):
@@ -196,17 +168,14 @@ class GradePredictor:
                 student_attendance = attendance.iloc[i]
                 student_z = current_z.iloc[i]
 
-                # Rule 1: Attendance below 75%
                 if pd.notna(student_attendance) and student_attendance < 75:
 
                     predicted_grades.append("DX")
 
-                # Rule 2: Missing attendance
                 elif pd.isna(student_attendance):
 
                     predicted_grades.append("N/A")
 
-                # Rule 3: Attendance >= 75%
                 else:
 
                     grade = self.predict(
@@ -227,19 +196,11 @@ class GradePredictor:
                 pd.Series(predicted_grades).value_counts()
             )
 
-            # Attendance statistics
             dx_count = predicted_grades.count("DX")
 
             print("\nStudents receiving DX:", dx_count)
 
-        # --------------------------------
-        # Preserve original CSV structure
-        # --------------------------------
-
         result = self.current.copy()
-
-        # Insert from right to left so positions
-        # of original columns do not change
 
         for subject in reversed(list(self.subjects.keys())):
 
@@ -247,7 +208,6 @@ class GradePredictor:
 
             position = details["insert_position"]
 
-            # Two header rows followed by predictions
             new_column = [
                 subject,
                 "Predicted Grade"
@@ -259,7 +219,6 @@ class GradePredictor:
                 new_column
             )
 
-        # Save complete CSV
         result.to_csv(
             "present_batch_predicted_grades.csv",
             index=False,
@@ -273,10 +232,6 @@ class GradePredictor:
         print("Output file:")
         print("present_batch_predicted_grades.csv")
 
-
-# --------------------------------
-# Execute
-# --------------------------------
 
 if __name__ == "__main__":
 
