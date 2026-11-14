@@ -19,9 +19,11 @@ class GradePredictor:
 
         # Original column positions
         self.subjects = {
+
             "Calculus": {
                 "previous_marks": [3, 4, 5, 6, 7],
                 "previous_grade": 8,
+                "attendance": 2,
                 "current_marks": [3, 4, 5, 6, 7],
                 "insert_position": 8
             },
@@ -29,6 +31,7 @@ class GradePredictor:
             "DSA": {
                 "previous_marks": [10, 11, 12, 13, 14],
                 "previous_grade": 15,
+                "attendance": 8,
                 "current_marks": [9, 10, 11, 12, 13],
                 "insert_position": 14
             },
@@ -36,6 +39,7 @@ class GradePredictor:
             "Digital Systems": {
                 "previous_marks": [17, 18, 19, 20, 21],
                 "previous_grade": 22,
+                "attendance": 14,
                 "current_marks": [15, 16, 17, 18, 19],
                 "insert_position": 20
             }
@@ -153,7 +157,6 @@ class GradePredictor:
 
     def run(self):
 
-        # Store predictions separately
         predictions = {}
 
         for subject, details in self.subjects.items():
@@ -168,6 +171,12 @@ class GradePredictor:
                 details
             )
 
+            # Current batch attendance
+            attendance = pd.to_numeric(
+                self.current.iloc[2:, details["attendance"]],
+                errors="coerce"
+            ).reset_index(drop=True)
+
             # Current batch weighted marks
             current_scores = self.calculate_marks(
                 self.current.iloc[2:],
@@ -179,18 +188,49 @@ class GradePredictor:
                 self.calculate_z(current_scores)
             )
 
-            # Predict each student's grade
-            predicted_grades = current_z.apply(
-                lambda z: self.predict(z, grade_average)
-            )
+            # Predict grades
+            predicted_grades = []
 
-            predictions[subject] = predicted_grades.tolist()
+            for i in range(len(current_scores)):
+
+                student_attendance = attendance.iloc[i]
+                student_z = current_z.iloc[i]
+
+                # Rule 1: Attendance below 75%
+                if pd.notna(student_attendance) and student_attendance < 75:
+
+                    predicted_grades.append("DX")
+
+                # Rule 2: Missing attendance
+                elif pd.isna(student_attendance):
+
+                    predicted_grades.append("N/A")
+
+                # Rule 3: Attendance >= 75%
+                else:
+
+                    grade = self.predict(
+                        student_z,
+                        grade_average
+                    )
+
+                    predicted_grades.append(grade)
+
+            predictions[subject] = predicted_grades
 
             print("\nCurrent Mean:", round(current_mean, 2))
             print("Current SD:", round(current_sd, 2))
 
             print("\nPredicted grade distribution:")
-            print(predicted_grades.value_counts())
+
+            print(
+                pd.Series(predicted_grades).value_counts()
+            )
+
+            # Attendance statistics
+            dx_count = predicted_grades.count("DX")
+
+            print("\nStudents receiving DX:", dx_count)
 
         # --------------------------------
         # Preserve original CSV structure
@@ -207,7 +247,7 @@ class GradePredictor:
 
             position = details["insert_position"]
 
-            # Two header rows followed by student predictions
+            # Two header rows followed by predictions
             new_column = [
                 subject,
                 "Predicted Grade"
@@ -219,7 +259,7 @@ class GradePredictor:
                 new_column
             )
 
-        # Save complete CSV with original two headers
+        # Save complete CSV
         result.to_csv(
             "present_batch_predicted_grades.csv",
             index=False,
