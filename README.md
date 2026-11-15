@@ -60,7 +60,7 @@ The system also includes a prediction component that uses previous batch academi
 
 ## Compilation
 
-Run ./run_pipeline.sh
+Run bash run_pipeline.sh
 
 ## Usage Instructions
 
