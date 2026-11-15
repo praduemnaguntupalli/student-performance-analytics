@@ -1,0 +1,95 @@
+=== 1. PROFILING: clean_data.py ===
+
+==================================================
+CURRENT BATCH
+==================================================
+      Student_Name  ... digital_systems_endsem_(100)
+0   Chitra Gaikwad  ...                         96.0
+1     Vihaan Patel  ...                         78.0
+2       Ananya Sen  ...                         75.0
+3       Kabir More  ...                         90.0
+4  Madhuri Dhillon  ...                         63.0
+
+[5 rows x 20 columns]
+
+Current batch shape: (120, 20)
+<class 'pandas.DataFrame'>
+RangeIndex: 120 entries, 0 to 119
+Data columns (total 20 columns):
+ #   Column                            Non-Null Count  Dtype  
+---  ------                            --------------  -----  
+ 0   Student_Name                      120 non-null    str    
+ 1   Roll_No                           120 non-null    str    
+ 2   calculus_attendance_(%)           120 non-null    int64  
+ 3   calculus_assignments_(20)         120 non-null    int64  
+ 4   calculus_quiz_1_(10)              120 non-null    int64  
+ 5   calculus_quiz_2_(10)              120 non-null    int64  
+ 6   calculus_midsem_(50)              120 non-null    int64  
+ 7   calculus_endsem_(100)             118 non-null    float64
+ 8   dsa_attendance_(%)                120 non-null    int64  
+ 9   dsa_assignments_(20)              120 non-null    int64  
+ 10  dsa_quiz_1_(10)                   120 non-null    int64  
+
+=== 2. PROFILING: predict_grades.py ===
+
+================================
+PROCESSING: Calculus
+================================
+
+--------------------------------
+Calculus PREVIOUS BATCH
+--------------------------------
+Mean: 64.92
+Standard Deviation: 11.64
+
+Average Z-score of each grade:
+Grade
+AA    2.088
+AB    1.357
+BB    0.588
+BC   -0.094
+CC   -1.078
+FR   -2.311
+Name: Z, dtype: float64
+
+Current Mean: 71.99
+Current SD: 11.48
+
+Predicted grade distribution:
+BB    39
+BC    37
+CC    24
+FR     7
+AA     7
+
+=== 3. PROFILING: visualize_data.py ===
+         2839483 function calls (2784556 primitive calls) in 3.308 seconds
+
+   Ordered by: internal time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        6    0.419    0.070    0.419    0.070 {built-in method _tkinter.create}
+1620/1608    0.283    0.000    0.338    0.000 {method 'call' of '_tkinter.tkapp' objects}
+     62/2    0.273    0.004    1.124    0.562 backend_agg.py:251(get_text_width_height_descent)
+       91    0.120    0.001    0.120    0.001 {built-in method _io.open}
+     40/2    0.071    0.002    1.124    0.562 text.py:114(_text_metrics)
+      599    0.065    0.000    0.065    0.000 {built-in method marshal.loads}
+     8111    0.051    0.000    0.090    0.000 inspect.py:895(cleandoc)
+        2    0.047    0.024    0.047    0.024 {built-in method _wmi.exec_query}
+       12    0.047    0.004    0.047    0.004 {built-in method matplotlib.backends._tkagg.blit}
+     2764    0.043    0.000    0.043    0.000 {built-in method nt.stat}
+    282/1    0.037    0.000    0.006    0.006 text.py:416(_get_layout)
+      697    0.036    0.000    0.036    0.000 {built-in method _io.open_code}
+193040/192695    0.030    0.000    0.043    0.000 {built-in method builtins.isinstance}
+      320    0.029    0.000    0.043    0.000 backend_agg.py:95(draw_path)
+     1507    0.027    0.000    0.027    0.000 {method 'read' of '_io.BufferedReader' objects}
+       77    0.027    0.000    0.027    0.000 {built-in method _imp.create_dynamic}
+       24    0.025    0.001    0.025    0.001 collections.py:360(draw)
+    77/49    0.022    0.000    0.064    0.001 {built-in method _imp.exec_dynamic}
+      440    0.021    0.000    0.039    0.000 lines.py:754(draw)
+      163    0.021    0.000    0.021    0.000 {method 'globalsetvar' of '_tkinter.tkapp' objects}
+109002/108944    0.021    0.000    0.031    0.000 {built-in method builtins.getattr}
+248616/245582    0.020    0.000    0.021    0.000 {built-in method builtins.len}
+     8824    0.020    0.000    0.020    0.000 {method 'reduce' of 'numpy.ufunc' objects}
+     5245    0.019    0.000    0.029    0.000 <frozen importlib._bootstrap_external>:101(_path_join)
+     1662    0.018    0.000    0.019    0.000 font_manager.py:1786(get_font)
