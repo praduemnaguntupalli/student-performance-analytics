@@ -97,6 +97,8 @@ The previous batch dataset contains actual grades which is used for the predicti
 - student_dataset_current_batch.csv
 - student_dataset_previous_batch.csv
 - visualize_data.py
+- run_tests.py
+- profile_report.txt
 
 ## Team Members
 
