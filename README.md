@@ -58,9 +58,9 @@ The system also includes a prediction component that uses previous batch academi
 - Bash scripting
 - Unix commands
 
-## Compilation and Execution
+## Compilation
 
----------TO BE DONE ------------------
+Run ./run_pipeline.sh
 
 ## Usage Instructions
 
