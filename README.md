@@ -99,11 +99,12 @@ The previous batch dataset contains actual grades which is used for the predicti
 - visualize_data.py
 - run_tests.py
 - profile_report.txt
+- commit_history.txt
 
 ## Team Members
 
-- Varun Kumar Reddy - CS25bt018
-- Praduemna - CS25bt015
-- Jagannadha gupta - CS25bt034
-- Benarjee - CS25bt053
-- Venkat - CS25bt032
+- Varun Kumar Reddy - CS25bt018- Python Main Code
+- Praduemna - CS25bt015 - Beamer,ReadMe
+- Jagannadha Gupta - CS25bt034- Latex Report
+- Benarjee - CS25bt053 - CSV Generation,Shell File
+- Venkat - CS25bt032 - Testing and Profiling
